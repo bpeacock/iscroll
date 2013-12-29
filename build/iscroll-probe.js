@@ -243,7 +243,7 @@ function IScroll (el, options) {
 
 		resizeIndicator: true,
 
-		mouseWheelSpeed: 20,
+		mouseWheelSpeed: 10,
 
 		snapThreshold: 0.334,
 
@@ -1017,7 +1017,7 @@ IScroll.prototype = {
         });
 
         this._wheelData = {
-            'line-height': parseInt(this.wrapper.parentNode.style.fontSize, 10),
+            lineHeight: parseInt(this.wrapper.parentNode.style.fontSize, 10),
             nullLowestDelta: function() {
                 lowestDelta = null;
             },
@@ -1083,6 +1083,8 @@ IScroll.prototype = {
             wheelDeltaX = e.deltaX * -1 * this.options.invertWheelDirection;
         }
 
+        console.log(wheelDeltaY);
+
         // No change actually happened, no reason to go any further
         if ( wheelDeltaY === 0 && wheelDeltaX === 0 ) { return; }
 
@@ -1092,7 +1094,7 @@ IScroll.prototype = {
         //   * deltaMode 1 is by lines
         //   * deltaMode 2 is by pages
         if ( e.deltaMode === 1 ) {
-            var lineHeight = this._wheelData['line-height'];
+            var lineHeight = this._wheelData.lineHeight;
             wheelDeltaY *= lineHeight;
             wheelDeltaX *= lineHeight;
         } else if ( e.deltaMode === 2 ) {
@@ -1132,6 +1134,8 @@ IScroll.prototype = {
         if (nullLowestDeltaTimeout) { clearTimeout(nullLowestDeltaTimeout); }
         nullLowestDeltaTimeout = setTimeout(this._wheelData.nullLowestDelta, 200);
 
+
+        /*** Make vertical mouse wheel work for horizontal scrolling in certain cases ***/
         //Not sure on the naming of this.options.horizontalMouseWheel
         if ( !this.hasVerticalScroll && !wheelDeltaX && this.options.horizontalMouseWheel) {
             wheelDeltaX = wheelDeltaY;
@@ -1139,8 +1143,6 @@ IScroll.prototype = {
         }
 
         /*** Find the New Position of the iScroll ***/
-        var speed = this.options.mouseWheelSpeed || 1;
-
         if ( this.options.snap ) {
             newX = this.currentPage.pageX;
             newY = this.currentPage.pageY;
@@ -1162,8 +1164,8 @@ IScroll.prototype = {
             return;
         }
         else {
-            newX = this.x + Math.round(this.hasHorizontalScroll ? wheelDeltaX : 0)*speed;
-            newY = this.y + Math.round(this.hasVerticalScroll ? wheelDeltaY : 0)*speed;
+            newX = this.x + Math.round(this.hasHorizontalScroll ? wheelDeltaX : 0)*this.options.mouseWheelSpeed;
+            newY = this.y + Math.round(this.hasVerticalScroll ? wheelDeltaY : 0)*this.options.mouseWheelSpeed;
 
             if ( newX > 0 ) {
                 newX = 0;
