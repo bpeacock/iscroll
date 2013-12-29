@@ -1,98 +1,178 @@
 
-	_initWheel: function () {
-		utils.addEvent(this.wrapper, 'wheel', this);
-		utils.addEvent(this.wrapper, 'mousewheel', this);
-		utils.addEvent(this.wrapper, 'DOMMouseScroll', this);
+    _initWheel: function () {
+        utils.addEvent(this.wrapper, 'wheel', this);
+        utils.addEvent(this.wrapper, 'mousewheel', this);
+        utils.addEvent(this.wrapper, 'DOMMouseScroll', this);
 
-		this.on('destroy', function () {
-			utils.removeEvent(this.wrapper, 'wheel', this);
-			utils.removeEvent(this.wrapper, 'mousewheel', this);
-			utils.removeEvent(this.wrapper, 'DOMMouseScroll', this);
-		});
-	},
+        this.on('destroy', function () {
+            utils.removeEvent(this.wrapper, 'wheel', this);
+            utils.removeEvent(this.wrapper, 'mousewheel', this);
+            utils.removeEvent(this.wrapper, 'DOMMouseScroll', this);
+        });
+    },
 
-	_wheel: function (e) {
-		if ( !this.enabled ) {
-			return;
-		}
+    _wheel: function (e) {
+        if ( !this.enabled ) {
+            return;
+        }
 
-		e.preventDefault();
-		e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
 
-		var wheelDeltaX, wheelDeltaY,
-			newX, newY,
-			that = this;
+        var newX, newY,
+            that = this;
 
-		if ( this.wheelTimeout === undefined ) {
-			that._execEvent('scrollStart');
-		}
+        if ( this.wheelTimeout === undefined ) {
+            that._execEvent('scrollStart');
+        }
 
-		// Execute the scrollEnd event after 400ms the wheel stopped scrolling
-		clearTimeout(this.wheelTimeout);
-		this.wheelTimeout = setTimeout(function () {
-			that._execEvent('scrollEnd');
-			that.wheelTimeout = undefined;
-		}, 400);
+        // Execute the scrollEnd event after 400ms the wheel stopped scrolling
+        clearTimeout(this.wheelTimeout);
+        this.wheelTimeout = setTimeout(function () {
+            that._execEvent('scrollEnd');
+            that.wheelTimeout = undefined;
+        }, 400);
 
-		if ( 'deltaX' in e ) {
-			wheelDeltaX = -e.deltaX;
-			wheelDeltaY = -e.deltaY;
-		} else if ( 'wheelDeltaX' in e ) {
-			wheelDeltaX = e.wheelDeltaX / 120 * this.options.mouseWheelSpeed;
-			wheelDeltaY = e.wheelDeltaY / 120 * this.options.mouseWheelSpeed;
-		} else if ( 'wheelDelta' in e ) {
-			wheelDeltaX = wheelDeltaY = e.wheelDelta / 120 * this.options.mouseWheelSpeed;
-		} else if ( 'detail' in e ) {
-			wheelDeltaX = wheelDeltaY = -e.detail / 3 * this.options.mouseWheelSpeed;
-		} else {
-			return;
-		}
+        /*** Get the wheelDelta's ***/
+        // Adopted from jquery-mousewheel (https://github.com/brandonaaron/jquery-mousewheel)
+        var wheelDeltaX     = 0,
+            wheelDeltaY     = 0,
+            absDelta        = 0,
+            nullLowestDeltaTimeout, lowestDelta;
 
-		wheelDeltaX *= this.options.invertWheelDirection;
-		wheelDeltaY *= this.options.invertWheelDirection;
+        // Old school scrollwheel delta
+        if ( 'detail'      in e ) { wheelDeltaY = e.detail * -1;      }
+        if ( 'wheelDelta'  in e ) { wheelDeltaY = e.wheelDelta;       }
+        if ( 'wheelDeltaY' in e ) { wheelDeltaY = e.wheelDeltaY;      }
+        if ( 'wheelDeltaX' in e ) { wheelDeltaX = e.wheelDeltaX * -1; }
 
-		if ( !this.hasVerticalScroll ) {
-			wheelDeltaX = wheelDeltaY;
-			wheelDeltaY = 0;
-		}
+        // Firefox < 17 horizontal scrolling related to DOMMouseScroll event
+        if ( 'axis' in e && e.axis === e.HORIZONTAL_AXIS ) {
+            wheelDeltaX = wheelDeltaY * -1;
+            wheelDeltaY = 0;
+        }
 
-		if ( this.options.snap ) {
-			newX = this.currentPage.pageX;
-			newY = this.currentPage.pageY;
+        // New school wheel delta (wheel event)
+        if ( 'deltaY' in e ) {
+            wheelDeltaY = e.deltaY * -1 * this.options.invertWheelDirection;
+        }
 
-			if ( wheelDeltaX > 0 ) {
-				newX--;
-			} else if ( wheelDeltaX < 0 ) {
-				newX++;
-			}
+        if ( 'deltaX' in e ) {
+            wheelDeltaX = e.deltaX * -1 * this.options.invertWheelDirection;
+        }
 
-			if ( wheelDeltaY > 0 ) {
-				newY--;
-			} else if ( wheelDeltaY < 0 ) {
-				newY++;
-			}
+        // No change actually happened, no reason to go any further
+        if ( wheelDeltaY === 0 && wheelDeltaX === 0 ) { return; }
 
-			this.goToPage(newX, newY);
+        // Need to convert lines and pages to pixels if we aren't already in pixels
+        // There are three delta modes:
+        //   * deltaMode 0 is by pixels, nothing to do
+        //   * deltaMode 1 is by lines
+        //   * deltaMode 2 is by pages
+        if ( e.deltaMode === 1 ) {
+            var lineHeight = $.data(this, 'mousewheel-line-height');
+            wheelDeltaY *= lineHeight;
+            wheelDeltaX *= lineHeight;
+        } else if ( e.deltaMode === 2 ) {
+            var pageHeight = $.data(this, 'mousewheel-page-height');
+            wheelDeltaY *= pageHeight;
+            wheelDeltaX *= pageHeight;
+        }
 
-			return;
-		}
+        // Store lowest absolute delta to normalize the delta values
+        absDelta = Math.max( Math.abs(wheelDeltaY), Math.abs(wheelDeltaX) );
 
-		newX = this.x + Math.round(this.hasHorizontalScroll ? wheelDeltaX : 0);
-		newY = this.y + Math.round(this.hasVerticalScroll ? wheelDeltaY : 0);
+        if ( !lowestDelta || absDelta < lowestDelta ) {
+            lowestDelta = absDelta;
 
-		if ( newX > 0 ) {
-			newX = 0;
-		} else if ( newX < this.maxScrollX ) {
-			newX = this.maxScrollX;
-		}
+            // Adjust older deltas if necessary
+            if ( shouldAdjustOldDeltas(e, absDelta) ) {
+                lowestDelta /= 40;
+            }
+        }
 
-		if ( newY > 0 ) {
-			newY = 0;
-		} else if ( newY < this.maxScrollY ) {
-			newY = this.maxScrollY;
-		}
+        // Adjust older deltas if necessary
+        if ( shouldAdjustOldDeltas(e, absDelta) ) {
+            // Divide all the things by 40!
+            wheelDeltaX /= 40;
+            wheelDeltaY /= 40;
+        }
 
-		this.scrollTo(newX, newY, 0);
+        // Get a whole, normalized value for the deltas
+        wheelDeltaX = Math[ wheelDeltaX >= 1 ? 'floor' : 'ceil' ](wheelDeltaX / lowestDelta);
+        wheelDeltaY = Math[ wheelDeltaY >= 1 ? 'floor' : 'ceil' ](wheelDeltaY / lowestDelta);
+
+
+        // Clearout lowestDelta after sometime to better
+        // handle multiple device types that give different
+        // a different lowestDelta
+        // Ex: trackpad = 3 and mouse wheel = 120
+        if (nullLowestDeltaTimeout) { clearTimeout(nullLowestDeltaTimeout); }
+        nullLowestDeltaTimeout = setTimeout(nullLowestDelta, 200);
+
+        //These functions could be defined outside of this callback to conserve memory & operations
+        function nullLowestDelta() {
+            lowestDelta = null;
+        }
+            
+        function shouldAdjustOldDeltas(orgEvent, absDelta) {
+            // If this is an older event and the delta is divisable by 120,
+            // then we are assuming that the browser is treating this as an
+            // older mouse wheel event and that we should divide the deltas
+            // by 40 to try and get a more usable deltaFactor.
+            // Side note, this actually impacts the reported scroll distance
+            // in older browsers and can cause scrolling to be slower than native.
+            // Turn this off by setting $.event.special.mousewheel.settings.adjustOldDeltas to false.
+            return orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
+        }
+
+        //Not sure on the naming of this.options.horizontalMouseWheel
+        if ( !this.hasVerticalScroll && !wheelDeltaX && this.options.horizontalMouseWheel) {
+            wheelDeltaX = wheelDeltaY;
+            wheelDeltaY = 0;
+        }
+
+        /*** Find the New Position of the iScroll ***/
+        var speed = this.options.mouseWheelSpeed || 10;
+
+        if ( this.options.snap ) {
+            newX = this.currentPage.pageX;
+            newY = this.currentPage.pageY;
+
+            if ( wheelDeltaX > 0 ) {
+                newX--;
+            } else if ( wheelDeltaX < 0 ) {
+                newX++;
+            }
+
+            if ( wheelDeltaY > 0 ) {
+                newY--;
+            } else if ( wheelDeltaY < 0 ) {
+                newY++;
+            }
+
+            this.goToPage(newX, newY);
+
+            return;
+        }
+        else {
+            newX = this.x + Math.round(this.hasHorizontalScroll ? wheelDeltaX : 0)*speed;
+            newY = this.y + Math.round(this.hasVerticalScroll ? wheelDeltaY : 0)*speed;
+
+            if ( newX > 0 ) {
+                newX = 0;
+            } else if ( newX < this.maxScrollX ) {
+                newX = this.maxScrollX;
+            }
+
+            if ( newY > 0 ) {
+                newY = 0;
+            } else if ( newY < this.maxScrollY ) {
+                newY = this.maxScrollY;
+            }
+
+            this.scrollTo(newX, newY, 0);
+        }
 
 // INSERT POINT: _wheel
-	},
+    },
