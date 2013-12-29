@@ -1,5 +1,7 @@
 
     _initWheel: function () {
+        var that = this;
+
         utils.addEvent(this.wrapper, 'wheel', this);
         utils.addEvent(this.wrapper, 'mousewheel', this);
         utils.addEvent(this.wrapper, 'DOMMouseScroll', this);
@@ -20,6 +22,9 @@
                 // Side note, this actually impacts the reported scroll distance
                 // in older browsers and can cause scrolling to be slower than native.
                 return orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
+            },
+            end: function() {
+                that.resetPosition(that.options.bounceTime);
             }
         };
     },
@@ -85,7 +90,7 @@
             wheelDeltaY *= lineHeight;
             wheelDeltaX *= lineHeight;
         } else if ( e.deltaMode === 2 ) {
-            var pageHeight = this.wrapper.clientHeight;
+            var pageHeight = this.wrapperHeight;
             wheelDeltaY *= pageHeight;
             wheelDeltaX *= pageHeight;
         }
@@ -132,10 +137,10 @@
             this._translateFromDeltas(wheelDeltaX, wheelDeltaY);
         }
 
+        /*** Scroll End Event ***/
         clearTimeout(this._wheelData.endTimer);
-        this._wheelData.endTimer = setTimeout(function(){
-            that.resetPosition(that.options.bounceTime);
-        }, 100);
+        this._wheelData.endTimer = setTimeout(this._wheelData.end, 40);
+
 
 // INSERT POINT: _wheel
     },
