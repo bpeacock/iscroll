@@ -1043,11 +1043,14 @@ IScroll.prototype = {
         if ( !this.enabled ) {
             return;
         }
-        
+
         if( this.options.mouseWheelPreventDefault ) {
             e.preventDefault();
             e.stopPropagation();
         }
+
+        //Stop any animations in progress
+        this.isAnimating = false;
 
         var newX, newY,
             that = this;
