@@ -1080,7 +1080,7 @@ IScroll.prototype = {
         clearTimeout(this.wheelTimeout);
         this.wheelTimeout = setTimeout(that._wheelData.end, 50);
 
-        /*** Get the wheelDelta's ***/
+        /*** Get the wheelDelta ***/
         // Adopted from jquery-mousewheel (https://github.com/brandonaaron/jquery-mousewheel)
         var wheelDeltaX     = 0,
             wheelDeltaY     = 0;
@@ -1135,8 +1135,7 @@ IScroll.prototype = {
         }
 
         /*** Make vertical mouse wheel work for horizontal scrolling in certain cases ***/
-        //Not sure on the naming of this.options.horizontalMouseWheel
-        if ( !this.hasVerticalScroll && !wheelDeltaX && this.options.horizontalMouseWheel) {
+        if ( !this.hasVerticalScroll && !wheelDeltaX && this.options.vertMousewheelControlsHor) {
             wheelDeltaX = wheelDeltaY;
             wheelDeltaY = 0;
         }
