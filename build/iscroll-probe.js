@@ -1018,7 +1018,6 @@ IScroll.prototype = {
 
         this._wheelData = {
             'line-height': parseInt(this.wrapper.parentNode.style.fontSize, 10),
-            'page-height': this.wrapper.clientHeight,
             nullLowestDelta: function() {
                 lowestDelta = null;
             },
@@ -1097,7 +1096,7 @@ IScroll.prototype = {
             wheelDeltaY *= lineHeight;
             wheelDeltaX *= lineHeight;
         } else if ( e.deltaMode === 2 ) {
-            var pageHeight = this._wheelData['page-height'];
+            var pageHeight = this.wrapper.clientHeight;
             wheelDeltaY *= pageHeight;
             wheelDeltaX *= pageHeight;
         }
@@ -1140,7 +1139,7 @@ IScroll.prototype = {
         }
 
         /*** Find the New Position of the iScroll ***/
-        var speed = this.options.mouseWheelSpeed || 10;
+        var speed = this.options.mouseWheelSpeed || 1;
 
         if ( this.options.snap ) {
             newX = this.currentPage.pageX;
