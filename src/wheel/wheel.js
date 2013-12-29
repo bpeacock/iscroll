@@ -48,7 +48,7 @@
             return;
         }
 
-        if( !this.options.eventPassthrough ) {
+        if( this.options.mouseWheeelPreventDefault ) {
             e.preventDefault();
             e.stopPropagation();
         }
