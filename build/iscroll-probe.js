@@ -1018,7 +1018,19 @@ IScroll.prototype = {
 
         this._wheelData = {
             'line-height': parseInt(this.wrapper.parentNode.style.fontSize, 10),
-            'page-height': this.wrapper.clientHeight
+            'page-height': this.wrapper.clientHeight,
+            nullLowestDelta: function() {
+                lowestDelta = null;
+            },
+            shouldAdjustOldDeltas: function(orgEvent, absDelta) {
+                // If this is an older event and the delta is divisable by 120,
+                // then we are assuming that the browser is treating this as an
+                // older mouse wheel event and that we should divide the deltas
+                // by 40 to try and get a more usable deltaFactor.
+                // Side note, this actually impacts the reported scroll distance
+                // in older browsers and can cause scrolling to be slower than native.
+                return orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
+            }
         };
     },
 
@@ -1097,13 +1109,13 @@ IScroll.prototype = {
             lowestDelta = absDelta;
 
             // Adjust older deltas if necessary
-            if ( shouldAdjustOldDeltas(e, absDelta) ) {
+            if ( this._wheelData.shouldAdjustOldDeltas(e, absDelta) ) {
                 lowestDelta /= 40;
             }
         }
 
         // Adjust older deltas if necessary
-        if ( shouldAdjustOldDeltas(e, absDelta) ) {
+        if ( this._wheelData.shouldAdjustOldDeltas(e, absDelta) ) {
             // Divide all the things by 40!
             wheelDeltaX /= 40;
             wheelDeltaY /= 40;
@@ -1119,22 +1131,7 @@ IScroll.prototype = {
         // a different lowestDelta
         // Ex: trackpad = 3 and mouse wheel = 120
         if (nullLowestDeltaTimeout) { clearTimeout(nullLowestDeltaTimeout); }
-        nullLowestDeltaTimeout = setTimeout(nullLowestDelta, 200);
-
-        //These functions could be defined outside of this callback to conserve memory & operations
-        function nullLowestDelta() {
-            lowestDelta = null;
-        }
-            
-        function shouldAdjustOldDeltas(orgEvent, absDelta) {
-            // If this is an older event and the delta is divisable by 120,
-            // then we are assuming that the browser is treating this as an
-            // older mouse wheel event and that we should divide the deltas
-            // by 40 to try and get a more usable deltaFactor.
-            // Side note, this actually impacts the reported scroll distance
-            // in older browsers and can cause scrolling to be slower than native.
-            return orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
-        }
+        nullLowestDeltaTimeout = setTimeout(this._wheelData.nullLowestDelta, 200);
 
         //Not sure on the naming of this.options.horizontalMouseWheel
         if ( !this.hasVerticalScroll && !wheelDeltaX && this.options.horizontalMouseWheel) {
