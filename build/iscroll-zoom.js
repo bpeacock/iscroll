@@ -246,7 +246,7 @@ function IScroll (el, options) {
 
 		resizeIndicator: true,
 
-		mouseWheelSpeed: 10,
+		mouseWheelSpeed: 1,
 
 		snapThreshold: 0.334,
 
@@ -1182,9 +1182,6 @@ IScroll.prototype = {
 
         this._wheelData = {
             lineHeight: parseInt(this.wrapper.parentNode.style.fontSize, 10),
-            nullLowestDelta: function() {
-                lowestDelta = null;
-            },
             shouldAdjustOldDeltas: function(orgEvent, absDelta) {
                 // If this is an older event and the delta is divisable by 120,
                 // then we are assuming that the browser is treating this as an
@@ -1222,9 +1219,7 @@ IScroll.prototype = {
         /*** Get the wheelDelta's ***/
         // Adopted from jquery-mousewheel (https://github.com/brandonaaron/jquery-mousewheel)
         var wheelDeltaX     = 0,
-            wheelDeltaY     = 0,
-            absDelta        = 0,
-            nullLowestDeltaTimeout, lowestDelta;
+            wheelDeltaY     = 0;
 
         // Old school scrollwheel delta
         if ( 'detail'      in e ) { wheelDeltaY = e.detail * -1;      }
@@ -1247,6 +1242,7 @@ IScroll.prototype = {
             wheelDeltaX = e.deltaX * -1 * this.options.invertWheelDirection;
         }
 
+        console.log('');
         console.log(wheelDeltaY);
 
         // No change actually happened, no reason to go any further
@@ -1270,34 +1266,12 @@ IScroll.prototype = {
         // Store lowest absolute delta to normalize the delta values
         absDelta = Math.max( Math.abs(wheelDeltaY), Math.abs(wheelDeltaX) );
 
-        if ( !lowestDelta || absDelta < lowestDelta ) {
-            lowestDelta = absDelta;
-
-            // Adjust older deltas if necessary
-            if ( this._wheelData.shouldAdjustOldDeltas(e, absDelta) ) {
-                lowestDelta /= 40;
-            }
-        }
-
         // Adjust older deltas if necessary
         if ( this._wheelData.shouldAdjustOldDeltas(e, absDelta) ) {
             // Divide all the things by 40!
             wheelDeltaX /= 40;
             wheelDeltaY /= 40;
         }
-
-        // Get a whole, normalized value for the deltas
-        wheelDeltaX = Math[ wheelDeltaX >= 1 ? 'floor' : 'ceil' ](wheelDeltaX / lowestDelta);
-        wheelDeltaY = Math[ wheelDeltaY >= 1 ? 'floor' : 'ceil' ](wheelDeltaY / lowestDelta);
-
-
-        // Clearout lowestDelta after sometime to better
-        // handle multiple device types that give different
-        // a different lowestDelta
-        // Ex: trackpad = 3 and mouse wheel = 120
-        if (nullLowestDeltaTimeout) { clearTimeout(nullLowestDeltaTimeout); }
-        nullLowestDeltaTimeout = setTimeout(this._wheelData.nullLowestDelta, 200);
-
 
         /*** Make vertical mouse wheel work for horizontal scrolling in certain cases ***/
         //Not sure on the naming of this.options.horizontalMouseWheel
@@ -1328,6 +1302,7 @@ IScroll.prototype = {
             return;
         }
         else {
+            console.log(wheelDeltaY);
             newX = this.x + Math.round(this.hasHorizontalScroll ? wheelDeltaX : 0)*this.options.mouseWheelSpeed;
             newY = this.y + Math.round(this.hasVerticalScroll ? wheelDeltaY : 0)*this.options.mouseWheelSpeed;
 
