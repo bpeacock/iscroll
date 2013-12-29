@@ -72,9 +72,6 @@
             wheelDeltaX = e.deltaX * -1 * this.options.invertWheelDirection;
         }
 
-        console.log('');
-        console.log(wheelDeltaY);
-
         // No change actually happened, no reason to go any further
         if ( wheelDeltaY === 0 && wheelDeltaX === 0 ) { return; }
 
@@ -132,24 +129,13 @@
             return;
         }
         else {
-            console.log(wheelDeltaY);
-            newX = this.x + Math.round(this.hasHorizontalScroll ? wheelDeltaX : 0)*this.options.mouseWheelSpeed;
-            newY = this.y + Math.round(this.hasVerticalScroll ? wheelDeltaY : 0)*this.options.mouseWheelSpeed;
-
-            if ( newX > 0 ) {
-                newX = 0;
-            } else if ( newX < this.maxScrollX ) {
-                newX = this.maxScrollX;
-            }
-
-            if ( newY > 0 ) {
-                newY = 0;
-            } else if ( newY < this.maxScrollY ) {
-                newY = this.maxScrollY;
-            }
-
-            this.scrollTo(newX, newY, 0);
+            this._translateFromDeltas(wheelDeltaX, wheelDeltaY);
         }
+
+        clearTimeout(this._wheelData.endTimer);
+        this._wheelData.endTimer = setTimeout(function(){
+            that.resetPosition(that.options.bounceTime);
+        }, 100);
 
 // INSERT POINT: _wheel
     },

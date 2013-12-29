@@ -444,61 +444,7 @@ IScroll.prototype = {
 			return;
 		}
 
-		// If you are scrolling in one direction lock the other
-		if ( !this.directionLocked && !this.options.freeScroll ) {
-			if ( absDistX > absDistY + this.options.directionLockThreshold ) {
-				this.directionLocked = 'h';		// lock horizontally
-			} else if ( absDistY >= absDistX + this.options.directionLockThreshold ) {
-				this.directionLocked = 'v';		// lock vertically
-			} else {
-				this.directionLocked = 'n';		// no lock
-			}
-		}
-
-		if ( this.directionLocked == 'h' ) {
-			if ( this.options.eventPassthrough == 'vertical' ) {
-				e.preventDefault();
-			} else if ( this.options.eventPassthrough == 'horizontal' ) {
-				this.initiated = false;
-				return;
-			}
-
-			deltaY = 0;
-		} else if ( this.directionLocked == 'v' ) {
-			if ( this.options.eventPassthrough == 'horizontal' ) {
-				e.preventDefault();
-			} else if ( this.options.eventPassthrough == 'vertical' ) {
-				this.initiated = false;
-				return;
-			}
-
-			deltaX = 0;
-		}
-
-		deltaX = this.hasHorizontalScroll ? deltaX : 0;
-		deltaY = this.hasVerticalScroll ? deltaY : 0;
-
-		newX = this.x + deltaX;
-		newY = this.y + deltaY;
-
-		// Slow down if outside of the boundaries
-		if ( newX > 0 || newX < this.maxScrollX ) {
-			newX = this.options.bounce ? this.x + deltaX / 3 : newX > 0 ? 0 : this.maxScrollX;
-		}
-		if ( newY > 0 || newY < this.maxScrollY ) {
-			newY = this.options.bounce ? this.y + deltaY / 3 : newY > 0 ? 0 : this.maxScrollY;
-		}
-
-		this.directionX = deltaX > 0 ? -1 : deltaX < 0 ? 1 : 0;
-		this.directionY = deltaY > 0 ? -1 : deltaY < 0 ? 1 : 0;
-
-		if ( !this.moved ) {
-			this._execEvent('scrollStart');
-		}
-
-		this.moved = true;
-
-		this._translate(newX, newY);
+		this._translateFromDeltas(deltaX, deltaY);
 
 /* REPLACE START: _move */
 
@@ -837,6 +783,67 @@ IScroll.prototype = {
 
 	},
 
+	_translateFromDeltas: function(deltaX, deltaY) {
+		var absDistX		= Math.abs(this.distX),
+			absDistY		= Math.abs(this.distY);
+
+		// If you are scrolling in one direction lock the other
+		if ( !this.directionLocked && !this.options.freeScroll ) {
+			if ( absDistX > absDistY + this.options.directionLockThreshold ) {
+				this.directionLocked = 'h';		// lock horizontally
+			} else if ( absDistY >= absDistX + this.options.directionLockThreshold ) {
+				this.directionLocked = 'v';		// lock vertically
+			} else {
+				this.directionLocked = 'n';		// no lock
+			}
+		}
+
+		if ( this.directionLocked == 'h' ) {
+			if ( this.options.eventPassthrough == 'vertical' ) {
+				e.preventDefault();
+			} else if ( this.options.eventPassthrough == 'horizontal' ) {
+				this.initiated = false;
+				return;
+			}
+
+			deltaY = 0;
+		} else if ( this.directionLocked == 'v' ) {
+			if ( this.options.eventPassthrough == 'horizontal' ) {
+				e.preventDefault();
+			} else if ( this.options.eventPassthrough == 'vertical' ) {
+				this.initiated = false;
+				return;
+			}
+
+			deltaX = 0;
+		}
+
+		deltaX = this.hasHorizontalScroll ? deltaX : 0;
+		deltaY = this.hasVerticalScroll ? deltaY : 0;
+
+		newX = this.x + deltaX;
+		newY = this.y + deltaY;
+
+		// Slow down if outside of the boundaries
+		if ( newX > 0 || newX < this.maxScrollX ) {
+			newX = this.options.bounce ? this.x + deltaX / 3 : newX > 0 ? 0 : this.maxScrollX;
+		}
+		if ( newY > 0 || newY < this.maxScrollY ) {
+			newY = this.options.bounce ? this.y + deltaY / 3 : newY > 0 ? 0 : this.maxScrollY;
+		}
+
+		this.directionX = deltaX > 0 ? -1 : deltaX < 0 ? 1 : 0;
+		this.directionY = deltaY > 0 ? -1 : deltaY < 0 ? 1 : 0;
+
+		if ( !this.moved ) {
+			this._execEvent('scrollStart');
+		}
+
+		this.moved = true;
+
+		this._translate(newX, newY);
+	},
+
 	_initEvents: function (remove) {
 		var eventType = remove ? utils.removeEvent : utils.addEvent,
 			target = this.options.bindToWrapper ? this.wrapper : window;
@@ -1069,9 +1076,6 @@ IScroll.prototype = {
             wheelDeltaX = e.deltaX * -1 * this.options.invertWheelDirection;
         }
 
-        console.log('');
-        console.log(wheelDeltaY);
-
         // No change actually happened, no reason to go any further
         if ( wheelDeltaY === 0 && wheelDeltaX === 0 ) { return; }
 
@@ -1129,24 +1133,13 @@ IScroll.prototype = {
             return;
         }
         else {
-            console.log(wheelDeltaY);
-            newX = this.x + Math.round(this.hasHorizontalScroll ? wheelDeltaX : 0)*this.options.mouseWheelSpeed;
-            newY = this.y + Math.round(this.hasVerticalScroll ? wheelDeltaY : 0)*this.options.mouseWheelSpeed;
-
-            if ( newX > 0 ) {
-                newX = 0;
-            } else if ( newX < this.maxScrollX ) {
-                newX = this.maxScrollX;
-            }
-
-            if ( newY > 0 ) {
-                newY = 0;
-            } else if ( newY < this.maxScrollY ) {
-                newY = this.maxScrollY;
-            }
-
-            this.scrollTo(newX, newY, 0);
+            this._translateFromDeltas(wheelDeltaX, wheelDeltaY);
         }
+
+        clearTimeout(this._wheelData.endTimer);
+        this._wheelData.endTimer = setTimeout(function(){
+            that.resetPosition(that.options.bounceTime);
+        }, 100);
 
 // INSERT POINT: _wheel
     },
