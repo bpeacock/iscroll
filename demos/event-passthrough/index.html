@@ -13,7 +13,13 @@
 var myScroll;
 
 function loaded () {
-	myScroll = new IScroll('#wrapper', { eventPassthrough: true, scrollX: true, scrollY: false, preventDefault: false });
+	myScroll = new IScroll('#wrapper', { 
+		eventPassthrough: true, 
+		scrollX: true, 
+		scrollY: false, 
+		preventDefault: false,
+		mouseWheel: true
+	});
 }
 
 </script>
@@ -34,6 +40,8 @@ body,ul,li {
 body {
 	font-size: 12px;
 	font-family: ubuntu, helvetica, arial;
+	overflow-x: hidden;
+	overflow-y: auto;
 }
 
 #header {

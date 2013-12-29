@@ -15,7 +15,7 @@
         this._wheelData = {
             lineHeight: parseInt(this.wrapper.parentNode.style.fontSize, 10),
             shouldAdjustOldDeltas: function(orgEvent, absDelta) {
-                // If this is an older event and the delta is divisable by 120,
+                // If this is an older event and the delta is divisible by 120,
                 // then we are assuming that the browser is treating this as an
                 // older mouse wheel event and that we should divide the deltas
                 // by 40 to try and get a more usable deltaFactor.
@@ -23,9 +23,20 @@
                 // in older browsers and can cause scrolling to be slower than native.
                 return orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
             },
-            end: function() {
+            end: function () {
                 that.resetPosition(that.options.bounceTime);
-            }
+
+                if ( that.options.snap && that._events.flick && new Date().getTime() - that._wheelData.startTime < 200 && Math.abs(that.x - that._wheelData.startX) < 100 && Math.abs(that.y - that._wheelData.startY) < 100 ) {
+                    that._execEvent('flick');
+                    return;
+                }
+
+                that._execEvent('scrollEnd');
+                that.wheelTimeout = undefined;
+            },
+            startTime:  null,
+            startX:     null,
+            startY:     null
         };
     },
 
@@ -34,7 +45,7 @@
             return;
         }
 
-        if( this.options.mouseWheelPreventDefault ) {
+        if( !this.options.eventPassthrough ) {
             e.preventDefault();
             e.stopPropagation();
         }
@@ -46,15 +57,15 @@
             that = this;
 
         if ( this.wheelTimeout === undefined ) {
-            that._execEvent('scrollStart');
+            this._execEvent('scrollStart');
+            this._wheelData.startTime = new Date().getTime();
+            this._wheelData.startX = this.x;
+            this._wheelData.startY = this.y;
         }
 
-        // Execute the scrollEnd event after 400ms the wheel stopped scrolling
+        // Execute the scrollEnd event after 80ms the wheel stopped scrolling
         clearTimeout(this.wheelTimeout);
-        this.wheelTimeout = setTimeout(function () {
-            that._execEvent('scrollEnd');
-            that.wheelTimeout = undefined;
-        }, 400);
+        this.wheelTimeout = setTimeout(that._wheelData.end, 80);
 
         /*** Get the wheelDelta's ***/
         // Adopted from jquery-mousewheel (https://github.com/brandonaaron/jquery-mousewheel)
@@ -118,7 +129,7 @@
         }
 
         /*** Find the New Position of the iScroll ***/
-        if ( this.options.snap ) {
+        /*if ( this.options.snap ) {
             newX = this.currentPage.pageX;
             newY = this.currentPage.pageY;
 
@@ -138,13 +149,9 @@
 
             return;
         }
-        else {
+        else { */
             this._translateFromDeltas(wheelDeltaX, wheelDeltaY);
-        }
-
-        /*** Scroll End Event ***/
-        clearTimeout(this._wheelData.endTimer);
-        this._wheelData.endTimer = setTimeout(this._wheelData.end, 40);
+        //}
 
 
 // INSERT POINT: _wheel
