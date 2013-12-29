@@ -30,8 +30,7 @@
                 if( that.options.snap ) {
                     var snap = that._nearestSnap(that.x, that.y);
                     that.goToPage(snap.pageX, snap.pageY);
-                }
-                else {
+                } else {
                     that.resetPosition(that.options.bounceTime);
                 }
 
@@ -71,7 +70,7 @@
         clearTimeout(this.wheelTimeout);
         this.wheelTimeout = setTimeout(that._wheelData.end, 50);
 
-        /*** Get the wheelDelta ***/
+        // Get the wheelDelta
         // Adopted from jquery-mousewheel (https://github.com/brandonaaron/jquery-mousewheel)
         var wheelDeltaX     = 0,
             wheelDeltaY     = 0;
@@ -125,13 +124,13 @@
             wheelDeltaY /= 40;
         }
 
-        /*** Make vertical mouse wheel work for horizontal scrolling in certain cases ***/
+        // Make vertical mouse wheel work for horizontal scrolling in certain cases
         if ( !this.hasVerticalScroll && !wheelDeltaX && this.options.vertMousewheelControlsHor) {
             wheelDeltaX = wheelDeltaY;
             wheelDeltaY = 0;
         }
 
-        /*** Find the New Position of the iScroll ***/
+        // Find the New Position of the iScroll
         this._translateFromDeltas(wheelDeltaX, wheelDeltaY);
         
 // INSERT POINT: _wheel
