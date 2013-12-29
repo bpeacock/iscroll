@@ -243,7 +243,8 @@ function IScroll (el, options) {
 
 		resizeIndicator: true,
 
-		mouseWheelSpeed: 1,
+		mouseWheelSpeed: 1, 
+		mouseWheelPreventDefault: true, 
 
 		snapThreshold: 0.334,
 
@@ -1051,9 +1052,11 @@ IScroll.prototype = {
         if ( !this.enabled ) {
             return;
         }
-
-        e.preventDefault();
-        e.stopPropagation();
+        
+        if( this.options.mouseWheelPreventDefault ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         var newX, newY,
             that = this;

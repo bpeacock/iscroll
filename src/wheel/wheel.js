@@ -33,9 +33,11 @@
         if ( !this.enabled ) {
             return;
         }
-
-        e.preventDefault();
-        e.stopPropagation();
+        
+        if( this.options.mouseWheelPreventDefault ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         var newX, newY,
             that = this;

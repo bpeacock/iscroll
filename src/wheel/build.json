@@ -1,7 +1,7 @@
 {
-	"insert": {
-		"OPTIONS": "\t\tmouseWheelSpeed: 1,",
-		"NORMALIZATION": "\tthis.options.invertWheelDirection = this.options.invertWheelDirection ? -1 : 1;",
-		"_init": "\t\tif ( this.options.mouseWheel ) {\n\t\t\tthis._initWheel();\n\t\t}"
-	}
+    "insert": {
+        "OPTIONS": "\t\tmouseWheelSpeed: 1, \n\t\tmouseWheelPreventDefault: true, ",
+        "NORMALIZATION": "\tthis.options.invertWheelDirection = this.options.invertWheelDirection ? -1 : 1;",
+        "_init": "\t\tif ( this.options.mouseWheel ) {\n\t\t\tthis._initWheel();\n\t\t}"
+    }
 }
