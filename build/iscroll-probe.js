@@ -1015,6 +1015,11 @@ IScroll.prototype = {
             utils.removeEvent(this.wrapper, 'mousewheel', this);
             utils.removeEvent(this.wrapper, 'DOMMouseScroll', this);
         });
+
+        this._wheelData = {
+            'line-height': parseInt(this.wrapper.parentNode.style.fontSize, 10),
+            'page-height': this.wrapper.clientHeight
+        };
     },
 
     _wheel: function (e) {
@@ -1076,11 +1081,11 @@ IScroll.prototype = {
         //   * deltaMode 1 is by lines
         //   * deltaMode 2 is by pages
         if ( e.deltaMode === 1 ) {
-            var lineHeight = $.data(this, 'mousewheel-line-height');
+            var lineHeight = this._wheelData['line-height'];
             wheelDeltaY *= lineHeight;
             wheelDeltaX *= lineHeight;
         } else if ( e.deltaMode === 2 ) {
-            var pageHeight = $.data(this, 'mousewheel-page-height');
+            var pageHeight = this._wheelData['page-height'];
             wheelDeltaY *= pageHeight;
             wheelDeltaX *= pageHeight;
         }
@@ -1128,7 +1133,6 @@ IScroll.prototype = {
             // by 40 to try and get a more usable deltaFactor.
             // Side note, this actually impacts the reported scroll distance
             // in older browsers and can cause scrolling to be slower than native.
-            // Turn this off by setting $.event.special.mousewheel.settings.adjustOldDeltas to false.
             return orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
         }
 
