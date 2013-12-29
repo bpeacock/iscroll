@@ -1033,11 +1033,15 @@ IScroll.prototype = {
                 return orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
             },
             end: function () {
-                that.resetPosition(that.options.bounceTime);
+                //Stop any animations in progress
+                that.isAnimating = false;
 
-                if ( that.options.snap && that._events.flick && new Date().getTime() - that._wheelData.startTime < 200 && Math.abs(that.x - that._wheelData.startX) < 100 && Math.abs(that.y - that._wheelData.startY) < 100 ) {
-                    that._execEvent('flick');
-                    return;
+                if( that.options.snap ) {
+                    var snap = that._nearestSnap(that.x, that.y);
+                    that.goToPage(snap.pageX, snap.pageY);
+                }
+                else {
+                    that.resetPosition(that.options.bounceTime);
                 }
 
                 that._execEvent('scrollEnd');
@@ -1074,7 +1078,7 @@ IScroll.prototype = {
 
         // Execute the scrollEnd event after 80ms the wheel stopped scrolling
         clearTimeout(this.wheelTimeout);
-        this.wheelTimeout = setTimeout(that._wheelData.end, 80);
+        this.wheelTimeout = setTimeout(that._wheelData.end, 50);
 
         /*** Get the wheelDelta's ***/
         // Adopted from jquery-mousewheel (https://github.com/brandonaaron/jquery-mousewheel)
@@ -1138,31 +1142,8 @@ IScroll.prototype = {
         }
 
         /*** Find the New Position of the iScroll ***/
-        /*if ( this.options.snap ) {
-            newX = this.currentPage.pageX;
-            newY = this.currentPage.pageY;
-
-            if ( wheelDeltaX > 0 ) {
-                newX--;
-            } else if ( wheelDeltaX < 0 ) {
-                newX++;
-            }
-
-            if ( wheelDeltaY > 0 ) {
-                newY--;
-            } else if ( wheelDeltaY < 0 ) {
-                newY++;
-            }
-
-            this.goToPage(newX, newY);
-
-            return;
-        }
-        else { */
-            this._translateFromDeltas(wheelDeltaX, wheelDeltaY);
-        //}
-
-
+        this._translateFromDeltas(wheelDeltaX, wheelDeltaY);
+        
 // INSERT POINT: _wheel
     },
 
